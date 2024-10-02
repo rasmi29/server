@@ -1,9 +1,12 @@
-const user = require("../models/User");
-const otp = require("../models/OTP");
+const User = require("../models/User");
+const OTP = require("../models/OTP");
 const otpGenerator = require("otp-generator");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
+
+
+
 //send otp
 exports.sendOTP = async(req,resizeBy) => {
     try{
@@ -25,12 +28,14 @@ exports.sendOTP = async(req,resizeBy) => {
             lowerCaseAlphabets: false,
             numbers: true,
             specialChars: false
-        });
+        }); 
+        console.log("otp geenerated ", otp)
 
         const otpPayload = {email,otp};
 
-        //create an entry for otp
+        //create an entry for otp, means entry in database 
         const otpBody = await OTP.create(otpPayload);
+        console.log("otp body",otpBody); 
 
         //return response succcessfully
         return res.status(200).json({
@@ -55,10 +60,10 @@ exports.sendOTP = async(req,resizeBy) => {
 exports.signUp = async (req,res) => {
     try{
         //fetch data from req body
-        const { firstName,lastName,email,passwordemail, password,confirmPassword,accountType,contactNumber,otp } = req.body;
+        const { firstName,lastName,email, password,confirmPassword,accountType,contactNumber,otp } = req.body;
         //validate
         //check if all fields are filled
-        if(!firstName ||!lastName ||!email ||!password ||!confirmPassword ||!otp){
+        if(!firstName ||!lastName ||!email ||!password ||!confirmPassword ||!otp  ){
             return res.status(400).json({
                 success: false,
                 message: "All fields are required"
@@ -66,7 +71,7 @@ exports.signUp = async (req,res) => {
         }       
         //check if password and confirmPassword match
         if(password!== confirmPassword){
-            return res.status(400).json({
+            return res.status(400).json({ 
                 success: false,
                 message: "Password and confirm password does not match"
             })
@@ -94,7 +99,7 @@ exports.signUp = async (req,res) => {
                 success: false,
                 message: "OTP not found"
             })
-        }else if(otp == recentOtp.otp){
+        }else if(otp !== recentOtp.otp){
             //invalid otp
             return res.status(401).json({
                 success: false,
@@ -189,5 +194,66 @@ exports.login = async (req,res) => {
     }
 }
 
+
+// is students
+
+exports.isStudent = async (req,res) => {
+    try{
+        if(req.user.accountType !== "Student"){
+            return res.status(401).json({
+                success: false,
+                message: "You are not a student"
+            })
+        }
+    }
+    catch(error){
+        console.log("error in isStudent", error);
+        return res.status(500).json({
+            success: false,
+            message: "Server error"
+        })
+    }
+}
+
+// is Instructor
+
+exports.isInstructor = async (req,res) => {
+    try{
+        if(req.user.accountType!== "Instructor"){
+            return res.status(401).json({
+                success: false,
+                message: "You are not an instructor"
+            })
+        }
+    }
+    catch(error){
+        console.log("error in isInstructor", error);
+        return res.status(500).json({
+            success: false,
+            message: "Server error"
+        })
+    }
+}
+
+
+//isAdmin
+
+exports.isAdmin = async (req,res) => {
+    try{
+        if(req.user.accountType!== "Admin"){
+            return res.status(401).json({
+                success: false,
+                message: "You are not an admin"
+            })
+        }
+    }
+    catch(error){
+        console.log("error in isAdmin", error);
+        return res.status(500).json({
+            success: false,
+            message: "Server error"
+        })
+    }
+}
 
 //change password
